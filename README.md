@@ -12,6 +12,5 @@ The original idea of this project was to create a remote-controlled servo with w
 - Experience with C++ and embedded systems
 - Create a successful door locking system
 - Master ESP32 use and communication protocols
-- Attempt to stay academically active while at home
 - Explore app integration
 - Examine security concerns
