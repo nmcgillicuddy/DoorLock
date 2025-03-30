@@ -5,7 +5,16 @@ the designated receiver ESP32.
 
 #include <esp_now.h>
 #include <WiFi.h>
+#include <SPI.h>
+#include <MFRC522.h>
 
+#define RST_PIN         9          // Configurable, see typical pin layout above
+#define SCK_PIN 18
+#define MISO_PIN 16
+#define MOSI_PIN 17
+#define SS_PIN 14
+
+MFRC522 mfrc522(SS_PIN, RST_PIN);  // Create MFRC522 instance
 //receiver MAC address
 uint8_t receiverMAC[] = {0x68, 0xB6, 0xB3, 0x3D, 0x86, 0xE8};
 
@@ -47,19 +56,43 @@ void setup() {
     Serial.println("Failed to add peer");
     return;
   }
+
+  SPI.begin(SCK_PIN, MISO_PIN, MOSI_PIN, SS_PIN);
+  mfrc522.PCD_Init();   // Init MFRC522
+  delay(4);       // Optional delay. Some board do need more time after init to be ready, see Readme
+  mfrc522.PCD_DumpVersionToSerial();  // Show details of PCD - MFRC522 Card Reader details
+  Serial.println(F("Scan PICC to unlock..."));
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  strcpy(myData.userID, "123456");
+  // Reset the loop if no new card present on the sensor/reader. This saves the entire process when idle.
+  if ( ! mfrc522.PICC_IsNewCardPresent()) {
+    return;
+  }
+
+  // Select one of the cards
+  if ( ! mfrc522.PICC_ReadCardSerial()) {
+    return;
+  }
+
+  char uidString[20] = {0};
+  int index = 0;
+  for (byte i = 0; i < mfrc522.uid.size; i++) {
+    index += sprintf(&uidString[index], "%02X", mfrc522.uid.uidByte[i]);
+  }
+
+  strcpy(myData.userID, uidString);
 
   esp_err_t result = esp_now_send(receiverMAC, (uint8_t *)&myData, sizeof(myData));
 
   if (result == ESP_OK) {
-    Serial.println("Sent with success");
+    Serial.println("Sent UID: ");
+    Serial.println(myData.userID);
   } else {
     Serial.println("Error sending the data");
   }
+
+  mfrc522.PICC_HaltA();
 
   delay(5000);
 }
