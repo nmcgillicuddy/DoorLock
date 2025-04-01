@@ -7,6 +7,7 @@ the designated receiver ESP32.
 #include <WiFi.h>
 #include <SPI.h>
 #include <MFRC522.h>
+#include "Config.h"
 
 #define RST_PIN         9          // Configurable, see typical pin layout above
 #define SCK_PIN 18
@@ -15,8 +16,8 @@ the designated receiver ESP32.
 #define SS_PIN 14
 
 MFRC522 mfrc522(SS_PIN, RST_PIN);  // Create MFRC522 instance
-//receiver MAC address
-uint8_t receiverMAC[] = {0x68, 0xB6, 0xB3, 0x3D, 0x86, 0xE8};
+//receiver MAC address from config file. If using locally replace or make a config file with one
+uint8_t receiverMAC[] = RECEIVER_MAC;
 
 //struct for data, update to contain more necessary variables
 typedef struct struct_message {
